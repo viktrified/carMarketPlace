@@ -2,10 +2,20 @@
 pragma solidity ^0.8.20;
 
 library Errors {
-    error hasMinted();
-    error NotEnoughMintingFee();
+    error InvalidTokenURI();
+    error InsufficientFee();
     error InsufficientFunds();
+    error CantRegisterSoldCar();
+    error CarDoesNotExist();
+    error NotForSale();
+    error NotCarOwner();
+    error AlreadyUpForAuction();
+    error InvalidPrice();
+    error LowBidAmount();
+    error AuctionHasEnded();
     error GreatherThanBalance();
-    error DontHaveNFT();
-    error HasClaimed();
+    error AuctionHasNotEnded();
+    error AuctionNotActive();
+    error NoBidsPlaced();
+    error FailedTransaction();
 }
