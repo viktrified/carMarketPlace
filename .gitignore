@@ -1,0 +1,73 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Logs
+logs/
+*.log
+*.out
+*.pid
+*.seed
+*.lock
+*.gz
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Compiled files
+dist/
+build/
+.out/
+*.swp
+*.swo
+*.swn
+
+# Editor settings
+.vscode/
+.idea/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Python-related
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Solidity-related (if you're using smart contracts)
+artifacts/
+cache/
+typechain/
+
+# Database files
+*.sqlite
+*.db
+*.sql
+dump.sql
+
+# Frontend build outputs
+.next/
+.nuxt/
+out/
+public/
+coverage/
