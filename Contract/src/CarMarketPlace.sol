@@ -48,6 +48,7 @@ contract CarContract is ERC721URIStorage {
         uint256 itemsListed;
         uint256 itemsWon;
         mapping(uint256 => bool) totalLikes;
+        Car[] carSold;
     }
 
     struct Auction {
@@ -296,6 +297,7 @@ contract CarContract is ERC721URIStorage {
 
 // frontend
 // testing
+// farming deployment
 // integration
 // backend deadline
 // scripting
