@@ -293,12 +293,74 @@ contract CarContract is ERC721URIStorage {
     function setRegistrationFee(uint256 _fee) public onlyOwner {
         fee = _fee;
     }
+
+    function getLatestRegisteredCars(uint256 count) public view returns (Car[] memory) {
+    require(count <= totalCars, "Invalid count");
+    Car[] memory latestCars = new Car[](count);
+    
+    for (uint256 i = 0; i < count; i++) {
+        latestCars[i] = cars[totalCars - i];
+    }
+    return latestCars;
 }
 
-// frontend
-// testing
-// farming deployment
-// integration
-// backend deadline
-// scripting
-// deployment script
+function getMostLikedCars(uint256 count) public view returns (Car[] memory) {
+    require(count <= totalCars, "Invalid count");
+    Car[] memory sortedCars = new Car[](totalCars);
+    
+    for (uint256 i = 1; i <= totalCars; i++) {
+        sortedCars[i - 1] = cars[i];
+    }
+    
+    for (uint256 i = 0; i < totalCars; i++) {
+        for (uint256 j = i + 1; j < totalCars; j++) {
+            if (sortedCars[j].likes > sortedCars[i].likes) {
+                (sortedCars[i], sortedCars[j]) = (sortedCars[j], sortedCars[i]);
+            }
+        }
+    }
+    
+    Car[] memory mostLikedCars = new Car[](count);
+    for (uint256 i = 0; i < count; i++) {
+        mostLikedCars[i] = sortedCars[i];
+    }
+    return mostLikedCars;
+}
+
+function getMostFollowedUsers(uint256 count) public view returns (address[] memory) {
+    address[] memory userAddresses = new address[](count);
+    uint256[] memory followersCount = new uint256[](count);
+    
+    uint256 index = 0;
+    for (uint256 i = 0; i < count; i++) {
+        for (uint256 j = i + 1; j < count; j++) {
+            if (users[userAddresses[j]].followers.length > users[userAddresses[i]].followers.length) {
+                (userAddresses[i], userAddresses[j]) = (userAddresses[j], userAddresses[i]);
+                (followersCount[i], followersCount[j]) = (followersCount[j], followersCount[i]);
+            }
+        }
+    }
+    
+    return userAddresses;
+}
+
+function getTodaySalesList() public view returns (Car[] memory) {
+    uint256 count = 0;
+    for (uint256 i = 1; i <= totalCars; i++) {
+        if (cars[i].status == CarStatus.Sold && cars[i].registrationTime >= block.timestamp - 1 days) {
+            count++;
+        }
+    }
+    
+    Car[] memory todaySales = new Car[](count);
+    uint256 index = 0;
+    for (uint256 i = 1; i <= totalCars; i++) {
+        if (cars[i].status == CarStatus.Sold && cars[i].registrationTime >= block.timestamp - 1 days) {
+            todaySales[index] = cars[i];
+            index++;
+        }
+    }
+    return todaySales;
+}
+
+}
