@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 import { Search } from "lucide-react";
 import newLogo from "../assets/new.png";
 import { Link, useLocation } from "react-router-dom";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import RegisterCarModal from "../components/modals/registerCar";
 
 const Header: React.FC = () => {
@@ -16,7 +17,7 @@ const Header: React.FC = () => {
     <>
       <header className="bg-gradient-to-r from-purple-800 via-maroon-700 to-black p-4 flex items-center justify-between shadow-lg font-sour">
         <div
-          className="text-white text-3xl font-bold cursor-pointer -mr-10"
+          className="text-white text-3xl font-bold cursor-pointer -mr-18"
           onClick={() => window.location.reload()}
         >
           <img src={newLogo} alt="Logo" className="h-auto w-[200px]" />
@@ -60,16 +61,16 @@ const Header: React.FC = () => {
         <motion.button whileTap={{ scale: 1.1 }}>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="border border-gray-300 text-white px-4 py-2 rounded-lg bg-[#1c092b]"
+            className="border border-gray-300 text-white px-4 py-2 rounded-lg bg-[#1c092b] -mr-24"
           >
             Add Your Car
           </button>
         </motion.button>
 
         <motion.button whileTap={{ scale: 1.1 }}>
-          <button className="border border-gray-300 text-white px-4 py-2 rounded-lg -ml-16 mr-3 bg-[#1c092b]">
-            Connect Wallet
-          </button>
+          {/* <button className="border border-gray-300 text-white px-4 py-2 rounded-lg -ml-16 mr-3 bg-[#1c092b]"> */}
+            <ConnectButton />
+          {/* </button> */}
         </motion.button>
       </header>
 

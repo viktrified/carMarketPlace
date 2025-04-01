@@ -14,4 +14,5 @@ library Events {
     event NewBid(uint carId, address newBidder, uint bidAmount);
     event WithdrawFees();
     event CarUpdated(uint carId, string name, string color, uint price);
+    event AuctionCreated(address owner, uint carId, uint endTime);
 }

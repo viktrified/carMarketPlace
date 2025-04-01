@@ -5,7 +5,7 @@ library Errors {
     error InvalidTokenURI();
     error InsufficientFee();
     error InsufficientFunds();
-    error CantRegisterSoldCar();
+    error SoldCar();
     error CarDoesNotExist();
     error NotForSale();
     error NotCarOwner();
@@ -16,6 +16,8 @@ library Errors {
     error GreatherThanBalance();
     error AuctionHasNotEnded();
     error AuctionNotActive();
-    error NoBidsPlaced();
+    error YouCantFollow();
     error FailedTransaction();
+    error CantUpdateSoldCar();
+    error InvalidAuctionEndTime();
 }

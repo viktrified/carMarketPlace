@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "./lib/Events.sol";
@@ -19,37 +19,16 @@ contract CarContract is ERC721URIStorage {
     uint256 public totalCars;
     uint256 public fee = 0.01 ether;
     mapping(uint256 => Car) public cars;
-    mapping(address => uint256[]) public userCars;
-    mapping(uint256 => Auction) public carAuctions;
+    mapping(uint256 => Auction) public auctions;
     mapping(address => User) public users;
 
-    struct Car {
-        address owner;
-        address previousOwner;
-        string name;
-        uint256 registrationTime;
-        uint256 carPrice;
-        string color;
-        string description;
-        CarStatus status;
-        bool upForAuction;
-        uint256 likes;
-    }
-
-    enum CarStatus {
-        Sold,
-        UpForSale,
-        NotUpForSale
-    }
-
-    struct User {
-        address[] followers;
-        uint256 totalAuctionParticipatingIn;
-        uint256 itemsListed;
-        uint256 itemsWon;
-        mapping(uint256 => bool) totalLikes;
-        Car[] carSold;
-    }
+    event CarUpdated(
+        uint carId,
+        string name,
+        CarStatus status,
+        bool upForAuction,
+        uint price
+    );
 
     struct Auction {
         address highestBidder;
@@ -60,114 +39,65 @@ contract CarContract is ERC721URIStorage {
         bool active;
     }
 
-    function registerCar(
-        string memory _name,
-        string memory _color,
-        string memory _description,
-        CarStatus _status,
-        string memory _tokenURI,
-        uint _price
-    ) public payable {
-        if (msg.value < fee) revert Errors.InsufficientFee();
-        if (bytes(_tokenURI).length == 0) revert Errors.InvalidTokenURI();
-        if (_status == CarStatus.Sold) revert Errors.CantRegisterSoldCar();
-        if (_price == 0) revert Errors.InvalidPrice();
-
-        totalCars++;
-        uint256 newItemId = totalCars;
-
-        Car memory newCar = Car({
-            owner: msg.sender,
-            previousOwner: address(0),
-            name: _name,
-            registrationTime: block.timestamp,
-            carPrice: _price,
-            color: _color,
-            description: _description,
-            status: _status,
-            upForAuction: false,
-            likes: 0
-        });
-
-        cars[newItemId] = newCar;
-        userCars[msg.sender].push(newItemId);
-
-        _mint(msg.sender, newItemId);
-        _setTokenURI(newItemId, _tokenURI);
-
-        emit Events.CarRegistered(
-            msg.sender,
-            _name,
-            block.timestamp,
-            _color,
-            newItemId
-        );
+    struct Car {
+        address owner;
+        address previousOwner;
+        uint previousCarPrice;
+        string name;
+        uint256 registrationTime;
+        uint256 carPrice;
+        string color;
+        string description;
+        CarStatus status;
+        bool upForAuction;
     }
 
-    function buyCar(uint256 _carId) public payable {
-        Car storage car = cars[_carId];
+    enum CarStatus {
+        Sold,
+        UpForSale,
+        NotUpForSale
+    }
 
-        if (car.carPrice <= 0 && car.owner == address(0))
-            revert Errors.CarDoesNotExist();
-        if (car.status == CarStatus.NotUpForSale) revert Errors.NotForSale();
-        if (msg.value < car.carPrice) revert Errors.InsufficientFunds();
+    struct User {
+        address[] followers;
+        uint[] cars;
+        uint256 totalAuctionParticipatingIn;
+        uint256[] itemsListedInAuction;
+        uint256[] itemsWonInAuction;
+        uint totalCarsSold;
+    }
 
+    function follow(address _user) public {
+        if (
+            users[msg.sender].cars.length > 1 ||
+            users[msg.sender].totalAuctionParticipatingIn > 1
+        ) revert Errors.YouCantFollow();
+
+        users[_user].followers.push(msg.sender);
+    }
+
+    function finalizeAuction(uint256 _carId) public onlyOwner {
+        Auction storage auction = auctions[_carId];
+        if (block.timestamp <= auction.endTime)
+            revert Errors.AuctionHasNotEnded();
+        if (!auction.active) revert Errors.AuctionNotActive();
+
+        users[auction.highestBidder].itemsWonInAuction.push(_carId);
+        users[cars[_carId].owner].totalCarsSold++;
         address previousOwner = cars[_carId].owner;
+        cars[_carId].owner = auction.highestBidder;
+        cars[_carId].status = CarStatus.Sold;
+        safeTransferFrom(previousOwner, auction.highestBidder, _carId);
+        auction.active = false;
 
-        car.previousOwner = previousOwner;
-        car.owner = msg.sender;
-        car.status = CarStatus.Sold;
-        safeTransferFrom(previousOwner, msg.sender, _carId);
-
-        (bool success, ) = payable(previousOwner).call{value: msg.value}("");
-        if (!success) revert Errors.FailedTransaction();
-
-        emit Events.CarSold(previousOwner, msg.sender, msg.value);
-    }
-
-    function removeCar(uint256 _carId) public {
-        address owner = cars[_carId].owner;
-
-        if (cars[_carId].carPrice <= 0 && cars[_carId].owner == address(0))
-            revert Errors.CarDoesNotExist();
-        if (msg.sender != owner) revert Errors.NotCarOwner();
-
-        uint256[] storage ownedCars = userCars[owner];
-        for (uint256 i = 0; i < ownedCars.length; i++) {
-            if (ownedCars[i] == _carId) {
-                ownedCars[i] = ownedCars[ownedCars.length - 1];
-                ownedCars.pop();
-                break;
-            }
-        }
-
-        delete cars[_carId];
-        emit Events.CarRemoved(_carId, owner);
-    }
-
-    function putCarForAuction(uint256 _carId, uint _endTime) public payable {
-        if (cars[_carId].carPrice <= 0 && cars[_carId].owner == address(0))
-            revert Errors.CarDoesNotExist();
-        if (msg.sender != cars[_carId].owner) revert Errors.NotCarOwner();
-        if (cars[_carId].upForAuction == true)
-            revert Errors.AlreadyUpForAuction();
-        if (msg.value < fee) revert Errors.InsufficientFee();
-
-        Auction memory auction = Auction({
-            highestBidder: address(0),
-            previousBidder: address(0),
-            previousBid: 0,
-            highestBid: 0,
-            endTime: _endTime,
-            active: true
-        });
-
-        cars[_carId].upForAuction = true;
-        carAuctions[_carId] = auction;
+        (bool _success, ) = payable(auction.highestBidder).call{
+            value: auction.highestBid
+        }("");
+        if (!_success) revert Errors.FailedTransaction();
     }
 
     function bid(uint256 _carId) public payable {
-        Auction storage auction = carAuctions[_carId];
+        Auction storage auction = auctions[_carId];
 
         if (block.timestamp > auction.endTime) revert Errors.AuctionHasEnded();
         if (!auction.active) revert Errors.AuctionNotActive();
@@ -181,6 +111,8 @@ contract CarContract is ERC721URIStorage {
                 msg.value > auction.highestBid,
                 "Can't bid lower than current bid amount"
             );
+
+            users[msg.sender].totalAuctionParticipatingIn++;
 
             address previousBidder = auction.highestBidder;
             uint256 previousBid = auction.highestBid;
@@ -203,23 +135,111 @@ contract CarContract is ERC721URIStorage {
         }
     }
 
-    function finalizeAuction(uint256 _carId) public onlyOwner {
-        Auction storage auction = carAuctions[_carId];
-        if (block.timestamp <= auction.endTime)
-            revert Errors.AuctionHasNotEnded();
-        if (!auction.active) revert Errors.AuctionNotActive();
-        if (auction.highestBidder == address(0)) revert Errors.NoBidsPlaced();
+    function putCarForAuction(uint256 _carId, uint _endTime) public payable {
+        if (cars[_carId].carPrice <= 0 && cars[_carId].owner == address(0))
+            revert Errors.CarDoesNotExist();
+        if (_endTime <= block.timestamp) revert Errors.InvalidAuctionEndTime();
+        if (msg.sender != cars[_carId].owner) revert Errors.NotCarOwner();
+        if (cars[_carId].upForAuction == true)
+            revert Errors.AlreadyUpForAuction();
+        if (msg.value < fee) revert Errors.InsufficientFee();
+        if (cars[_carId].status != CarStatus.UpForSale)
+            revert Errors.NotForSale();
 
-        auction.active = false;
+        Auction memory auction = Auction({
+            highestBidder: address(0),
+            previousBidder: address(0),
+            previousBid: 0,
+            highestBid: 0,
+            endTime: _endTime,
+            active: true
+        });
+
+        cars[_carId].upForAuction = true;
+        users[msg.sender].itemsListedInAuction.push(_carId);
+        auctions[_carId] = auction;
+
+        emit Events.AuctionCreated(msg.sender, _carId, _endTime);
+    }
+
+    function registerCar(
+        string memory _name,
+        string memory _color,
+        string memory _description,
+        CarStatus _status,
+        string memory _tokenURI,
+        uint _price
+    ) public payable {
+        if (msg.value < fee) revert Errors.InsufficientFee();
+        if (bytes(_tokenURI).length == 0) revert Errors.InvalidTokenURI();
+        if (_status == CarStatus.Sold) revert Errors.SoldCar();
+        if (_price == 0) revert Errors.InvalidPrice();
+
+        totalCars++;
+        uint256 newItemId = totalCars;
+
+        Car memory newCar = Car({
+            owner: msg.sender,
+            previousOwner: address(0),
+            previousCarPrice: 0,
+            name: _name,
+            registrationTime: block.timestamp,
+            carPrice: _price,
+            color: _color,
+            description: _description,
+            status: _status,
+            upForAuction: false
+        });
+
+        cars[newItemId] = newCar;
+        users[msg.sender].cars.push(newItemId);
+
+        _mint(msg.sender, newItemId);
+        _setTokenURI(newItemId, _tokenURI);
+
+        emit Events.CarRegistered(
+            msg.sender,
+            _name,
+            block.timestamp,
+            _color,
+            newItemId
+        );
+    }
+
+    function buyCar(uint256 _carId) public payable {
+        Car storage car = cars[_carId];
+
+        if (car.carPrice <= 0 && car.owner == address(0))
+            revert Errors.CarDoesNotExist();
+        if (car.status == CarStatus.NotUpForSale) revert Errors.NotForSale();
+        if (msg.value < car.carPrice) revert Errors.InsufficientFunds();
+        if (car.status == CarStatus.Sold) revert Errors.SoldCar();
+
         address previousOwner = cars[_carId].owner;
-        cars[_carId].owner = auction.highestBidder;
-        cars[_carId].status = CarStatus.Sold;
-        safeTransferFrom(previousOwner, auction.highestBidder, _carId);
 
-        (bool _success, ) = payable(auction.highestBidder).call{
-            value: auction.highestBid
-        }("");
-        if (!_success) revert Errors.FailedTransaction();
+        car.previousOwner = previousOwner;
+        car.owner = msg.sender;
+
+        for (uint256 i = 0; i < users[previousOwner].cars.length; i++) {
+            if (users[previousOwner].cars[i] == _carId) {
+                users[previousOwner].cars[i] = users[previousOwner].cars[
+                    users[previousOwner].cars.length - 1
+                ];
+                users[previousOwner].cars.pop();
+                break;
+            }
+        }
+
+        car.previousCarPrice = car.carPrice;
+        car.carPrice = msg.value;
+        car.status = CarStatus.Sold;
+        users[msg.sender].totalCarsSold++;
+        safeTransferFrom(previousOwner, msg.sender, _carId);
+
+        (bool success, ) = payable(previousOwner).call{value: msg.value}("");
+        if (!success) revert Errors.FailedTransaction();
+
+        emit Events.CarSold(previousOwner, msg.sender, msg.value);
     }
 
     function withdrawFees() public onlyOwner {
@@ -235,40 +255,24 @@ contract CarContract is ERC721URIStorage {
     function updateCarInfo(
         uint256 _carId,
         string memory _name,
-        string memory _color,
         string memory _description,
-        uint _price
-    ) public onlyOwner {
+        uint _price,
+        CarStatus _status,
+        bool _upForAuction
+    ) public {
         if (cars[_carId].carPrice <= 0 && cars[_carId].owner == address(0))
             revert Errors.CarDoesNotExist();
         if (msg.sender == cars[_carId].owner) revert Errors.NotCarOwner();
+        if (_status == CarStatus.Sold) revert Errors.CantUpdateSoldCar();
 
         Car storage car = cars[_carId];
         car.name = _name;
-        car.color = _color;
         car.description = _description;
         car.carPrice = _price;
+        car.status = _status;
+        car.upForAuction = _upForAuction;
 
-        emit Events.CarUpdated(_carId, _name, _color, _price);
-    }
-
-    function likeCar(uint _carId) public {
-        require(
-            msg.sender == contractOwner || userCars[msg.sender].length > 0,
-            "You must have registered or bought a car before liking"
-        );
-
-        users[msg.sender].totalLikes[_carId] = true;
-        cars[_carId].likes++;
-    }
-
-    function follow() public {
-        require(
-            msg.sender == contractOwner || userCars[msg.sender].length > 0,
-            "You must have registered or bought a car before liking"
-        );
-
-        users[msg.sender].followers.push(msg.sender);
+        emit CarUpdated(_carId, _name, _status, _upForAuction, _price);
     }
 
     function getCarInfo(
@@ -278,6 +282,12 @@ contract CarContract is ERC721URIStorage {
             revert Errors.CarDoesNotExist();
 
         car_ = cars[_carId];
+    }
+
+    function getUsersCars(
+        address _user
+    ) public view onlyOwner returns (uint256[] memory cars_) {
+        cars_ = users[_user].cars;
     }
 
     function getCars() public view onlyOwner returns (Car[] memory cars_) {
@@ -290,77 +300,7 @@ contract CarContract is ERC721URIStorage {
         cars_;
     }
 
-    function setRegistrationFee(uint256 _fee) public onlyOwner {
+    function setFee(uint256 _fee) public onlyOwner {
         fee = _fee;
     }
-
-    function getLatestRegisteredCars(uint256 count) public view returns (Car[] memory) {
-    require(count <= totalCars, "Invalid count");
-    Car[] memory latestCars = new Car[](count);
-    
-    for (uint256 i = 0; i < count; i++) {
-        latestCars[i] = cars[totalCars - i];
-    }
-    return latestCars;
-}
-
-function getMostLikedCars(uint256 count) public view returns (Car[] memory) {
-    require(count <= totalCars, "Invalid count");
-    Car[] memory sortedCars = new Car[](totalCars);
-    
-    for (uint256 i = 1; i <= totalCars; i++) {
-        sortedCars[i - 1] = cars[i];
-    }
-    
-    for (uint256 i = 0; i < totalCars; i++) {
-        for (uint256 j = i + 1; j < totalCars; j++) {
-            if (sortedCars[j].likes > sortedCars[i].likes) {
-                (sortedCars[i], sortedCars[j]) = (sortedCars[j], sortedCars[i]);
-            }
-        }
-    }
-    
-    Car[] memory mostLikedCars = new Car[](count);
-    for (uint256 i = 0; i < count; i++) {
-        mostLikedCars[i] = sortedCars[i];
-    }
-    return mostLikedCars;
-}
-
-function getMostFollowedUsers(uint256 count) public view returns (address[] memory) {
-    address[] memory userAddresses = new address[](count);
-    uint256[] memory followersCount = new uint256[](count);
-    
-    uint256 index = 0;
-    for (uint256 i = 0; i < count; i++) {
-        for (uint256 j = i + 1; j < count; j++) {
-            if (users[userAddresses[j]].followers.length > users[userAddresses[i]].followers.length) {
-                (userAddresses[i], userAddresses[j]) = (userAddresses[j], userAddresses[i]);
-                (followersCount[i], followersCount[j]) = (followersCount[j], followersCount[i]);
-            }
-        }
-    }
-    
-    return userAddresses;
-}
-
-function getTodaySalesList() public view returns (Car[] memory) {
-    uint256 count = 0;
-    for (uint256 i = 1; i <= totalCars; i++) {
-        if (cars[i].status == CarStatus.Sold && cars[i].registrationTime >= block.timestamp - 1 days) {
-            count++;
-        }
-    }
-    
-    Car[] memory todaySales = new Car[](count);
-    uint256 index = 0;
-    for (uint256 i = 1; i <= totalCars; i++) {
-        if (cars[i].status == CarStatus.Sold && cars[i].registrationTime >= block.timestamp - 1 days) {
-            todaySales[index] = cars[i];
-            index++;
-        }
-    }
-    return todaySales;
-}
-
 }

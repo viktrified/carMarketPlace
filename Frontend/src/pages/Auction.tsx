@@ -91,7 +91,9 @@ const Auction = () => {
             <h2 className="text-lg font-semibold mt-2">{car.name}</h2>
             <div className="flex items-center text-gray-300 mt-1">
               <User className="w-4 h-4 mr-2" />
-              <span>{car.seller}</span>
+              <span>
+                {car.seller.slice(0, 6)}...{car.seller.slice(-4)}
+              </span>
             </div>
             <div className="flex items-center text-green-400 mt-1">
               <DollarSign className="w-4 h-4 mr-2" />

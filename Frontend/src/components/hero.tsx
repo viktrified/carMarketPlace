@@ -5,6 +5,10 @@ import car2 from "../assets/car2.png";
 import car3 from "../assets/car3.png";
 import car4 from "../assets/car4.png";
 import car5 from "../assets/car5.png";
+import car6 from "../assets/car6.png";
+import car7 from "../assets/car7.png";
+import car8 from "../assets/car8.png";
+
 
 const cars = [
   {
@@ -14,8 +18,8 @@ const cars = [
       "A high-performance luxury SUV with a 4.0L twin-turbo V8 engine delivering 641 HP.",
   },
   {
-    image: car2,
-    name: "Ferrari Purosangue",
+    image: car6,
+    name: "Ferrari",
     description:
       "Ferrari's first SUV, combining speed and elegance with a powerful V12 engine.",
   },
@@ -32,7 +36,7 @@ const cars = [
       "A refined yet powerful SUV, delivering 697 HP with exceptional handling.",
   },
   {
-    image: car5,
+    image: car8,
     name: "Bentley Bentayga Speed",
     description:
       "Luxury meets performance in this W12-powered SUV with superior craftsmanship.",
@@ -47,7 +51,7 @@ const CarSearchComponent: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % cars.length);
-    }, 3000);
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -69,13 +73,13 @@ const CarSearchComponent: React.FC = () => {
       <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 items-center gap-8 text-white">
         <button
           onClick={handlePrev}
-          className="absolute left-4 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-80"
+          className="absolute left-4 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-80 ml-9"
         >
           <ChevronLeft className="text-white w-8 h-8" />
         </button>
         <div className="text-left">
           <div className="flex gap-6 items-baseline">
-            <h1 className="text-5xl font-bold">{cars[currentIndex].name}</h1>
+            <h1 className="text-3xl font-bold">{cars[currentIndex].name}</h1>
             <button
               onClick={() => setLiked(!liked)}
               className="text-gray-500 transition-transform duration-200 transform hover:scale-110 flex gap-1 items-center"
@@ -105,13 +109,13 @@ const CarSearchComponent: React.FC = () => {
             </a>
           </div>
         </div>
-        <div className="relative w-full max-w-lg h-96 flex items-center justify-center overflow-hidden">
+        <div className="relative w-full max-w-lg h-[500px] flex items-center justify-center">
           {cars.map((car, index) => (
             <img
               key={index}
               src={car.image}
               alt={car.name}
-              className={`absolute transition-opacity duration-1000 w-full h-full object-cover ${
+              className={`absolute transition-opacity duration-[2000ms] w-full h-full object-cover ${
                 index === currentIndex ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -119,9 +123,9 @@ const CarSearchComponent: React.FC = () => {
 
           <button
             onClick={handleNext}
-            className="absolute right-4 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-80"
+            className="absolute right-4 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-80 -mr-4"
           >
-            <ChevronRight className="text-white w-8 h-8" />
+            <ChevronRight className="text-white w-8 h-8 " />
           </button>
         </div>
       </div>

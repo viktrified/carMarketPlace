@@ -27,7 +27,7 @@ const carCategories = [
       },
       {
         image: car2,
-        name: "Ferrari Purosangue",
+        name: "Ferrari",
         price: "3.2 ETH",
         owner: "0xab12...st90",
       },
@@ -51,7 +51,7 @@ const carCategories = [
       },
       {
         image: car6,
-        name: "Aston Martin DB11",
+        name: "Aston Martin",
         price: "2.2 ETH",
         owner: "0.op56...qr78",
       },
@@ -174,38 +174,38 @@ const CarsForSale = ({ address }: { address: string }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-900 to-black text-white p-10">
-      <h1 className="text-4xl font-bold mb-6">Cars for Sale</h1>
+      {/* <h1 className="text-4xl font-bold mb-6">Cars for Sale</h1> */}
 
       {carCategories.map((category, index) => {
-        if (!scrollRefs.current[index]) {
-          scrollRefs.current[index] = React.createRef();
-        }
+        // if (!scrollRefs.current[index]) {
+        //   // scrollRefs.current[index] = React.createRef();
+        // }
 
-        const scrollLeft = () => {
-          if (scrollRefs.current[index].current) {
-            scrollRefs.current[index].current.scrollBy({
-              left: -300,
-              behavior: "smooth",
-            });
-          }
-        };
+        // const scrollLeft = () => {
+        //   if (scrollRefs.current[index].current) {
+        //     scrollRefs.current[index].current.scrollBy({
+        //       left: -300,
+        //       behavior: "smooth",
+        //     });
+        //   }
+        // };
 
-        const scrollRight = () => {
-          if (scrollRefs.current[index].current) {
-            scrollRefs.current[index].current.scrollBy({
-              left: 300,
-              behavior: "smooth",
-            });
-          }
-        };
+        // const scrollRight = () => {
+        //   if (scrollRefs.current[index].current) {
+        //     scrollRefs.current[index].current.scrollBy({
+        //       left: 300,
+        //       behavior: "smooth",
+        //     });
+        //   }
+        // };
 
         return (
           <div key={index} className="mb-8 relative">
             <h2 className="text-2xl font-semibold mb-4">{category.title}</h2>
-            <div className="relative w-full overflow-hidden">
+            <div className="relative w-full">
               <div
-                ref={scrollRefs.current[index]}
-                className="flex gap-4 overflow-x-auto scrollbar-hide"
+                // ref={scrollRefs.current[index]}
+                className="flex gap-4"
               >
                 {category.cars.map((car, i) => (
                   <motion.div
@@ -235,14 +235,14 @@ const CarsForSale = ({ address }: { address: string }) => {
               </div>
             </div>
             <button
-              onClick={scrollLeft}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 p-2 rounded-full"
+              // onClick={scrollLeft}
+              className="absolute left-0 top-[190px] transform -translate-y-1/2 bg-black bg-opacity-50 p-2 rounded-full"
             >
               <ChevronLeft className="w-6 h-6 text-white" />
             </button>
             <button
-              onClick={scrollRight}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 p-2 rounded-full"
+              // onClick={scrollRight}
+              className="absolute right-0 top-[190px] transform -translate-y-1/2 bg-black bg-opacity-50 p-2 rounded-full"
             >
               <ChevronRight className="w-6 h-6 text-white" />
             </button>

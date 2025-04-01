@@ -7,7 +7,10 @@ module.exports = {
         dosis: ["Dosis", "sans-serif"],
         barlow: ["Barlow Condensed", "sans-serif"],
         delius: ["Delius", "cursive"],
-        sour: ["Sour Gummy", "sans-serif"]
+        sour: ["Sour Gummy", "sans-serif"],
+      },
+      transitionDuration: {
+        2000: "2000ms",
       },
     },
   },
